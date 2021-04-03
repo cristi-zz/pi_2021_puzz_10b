@@ -11,6 +11,7 @@ void testOpenImage()
 	while(openFileDlg(fname))
 	{
 		Mat src;
+		//modificare in cod
 		src = imread(fname);
 		imshow("opened image",src);
 		waitKey();
