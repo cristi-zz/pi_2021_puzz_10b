@@ -39,4 +39,4 @@ despre *rebase*. NU il recomand a fi folosit, decat cu atentie.
 Alta modificare pt conflict
 IONUT
 
-Iar modifica mada
+Iar  mada
