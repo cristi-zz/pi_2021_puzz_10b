@@ -36,4 +36,7 @@ Spre deosebire de tutorialul de git, vom lucra direct in master, fara sa mai fac
 despre *rebase*. NU il recomand a fi folosit, decat cu atentie.
 
 -----Prima modificare Madalina-----
+Alta modificare pt conflict
 IONUT
+
+Iar  mada
