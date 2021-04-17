@@ -95,7 +95,7 @@ int RMSE(Mat_<uchar> poza1, Mat_<uchar> poza2, int pozitieImg1, int pozitieImg2)
 	float scor = 0;
 	float bestScore = 999999;
 	int pozitieDePotrivire = 0; 
-
+	
 	//if (pozitieImg1 == 0 && pozitieImg2 == 2)
 	//	return -1;
 
