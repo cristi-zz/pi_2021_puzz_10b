@@ -88,76 +88,84 @@ Mat_ <uchar> getMiniPoza(Mat_<uchar> src, Point p, int latime, int lungime)
 	return dst;
 }
 
-float RMSE(Mat_<uchar> poza1, Mat_<uchar> poza2, int pozitie)
+Mat_<uchar> extractMat(Mat_<uchar> poza, int pozitie) {
+
+  Mat_<uchar> extras;
+
+  if (pozitie == 1 || pozitie == 3)
+  {
+	  extras = Mat_<uchar>(3, poza.rows);
+  }
+  
+  if (pozitie == 0 || pozitie == 2)
+  {
+	  extras = Mat_<uchar>(3, poza.cols);
+  }
+
+  if(pozitie == 0)
+  {
+	  for (int i = 0; i < 3; i++)
+		  for (int j = 0; j < poza.cols; j++)
+			  extras(i, j) = poza(i, j);
+  }
+
+  if (pozitie == 1)
+  {
+	  int i2 = 0, j2 = 0;
+
+	  for (int i = poza.cols - 1; i >= poza.cols - 3; i--) {
+		  for (int j = 0; j < poza.rows; j++)
+		  {
+			  extras(i2, j2) = poza(j, i);
+			  j2++;
+		  }
+		  i2++;
+		  j2 = 0;
+	  }
+  }
+
+  if (pozitie == 2)
+  {
+	  for (int i = 0; i < 3; i++)
+		  for (int j = 0; j < poza.cols; j++)
+			  extras(i, j) = poza(poza.rows - i - 1, j);
+  }
+
+  if (pozitie == 3)
+  {
+	  int i2 = 0, j2 = 0;
+
+	  for (int i = 0; i < 3; i++) {
+		  for (int j = 0; j < poza.rows; j++)
+		  {
+			  extras(i2, j2) = poza(j, i);
+			  j2++;
+		  }
+		  i2++;
+		  j2 = 0;
+	  }
+  }
+
+  return extras;
+}
+
+float RMSE(Mat_<uchar> poza1, Mat_<uchar> poza2)
 {
 	float sum = 0;
 	float scor = 0;
-	float bestScore = 999999;
-	int pozitieDePotrivire = 0; 
-	
-	if (pozitie == 0)
-	{
-		for (int i = 0; i < poza1.cols; i++)
+	float pondere[3] = { 0.8, 0.15, 0.05};
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < poza1.cols; j++)
 		{
-			sum += (1.0f * (poza1(0, i) - poza2(poza2.rows - 1, i)) * (poza1(0, i) - poza2(poza2.rows - 1, i))) / poza1.cols;
+			sum += (1.0f * (poza1(i, j) - poza2(i, j)) * (poza1(i, j) - poza2(i, j))) / poza1.cols * pondere[i];
 		}
-		scor = sqrt(sum);
-		printf("\nscor potrivire (caz 0) ==> img2 peste img1 = %f", scor);
-		bestScore = scor;
 	}
+
+	scor = sqrt(sum);
+	printf("\nscor = %f", scor);
 		
-	sum = 0;
-
-	if (pozitie == 1)
-	{
-		for (int i = 0; i < poza1.rows; i++)
-		{
-			sum += (1.0f * (poza1(i, poza1.cols - 1) - poza2(i, 0)) * (poza1(i, poza1.cols - 1) - poza2(i, 0))) / poza1.rows;
-		}
-		scor = sqrt(sum);
-		printf("\nscor potrivire (caz 1) ==> img2 in dreapta lui img1 = %f", scor);
-		if (scor < bestScore)
-		{
-			bestScore = scor;
-			pozitieDePotrivire = 1;
-		}
-	}
-	sum = 0;
-
-	if (pozitie == 2)
-	{
-		for (int i = 0; i < poza1.cols; i++)
-		{
-			sum += (1.0f * (poza1(poza1.rows - 1, i) - poza2(0, i)) * (poza1(poza1.rows - 1, i) - poza2(0, i))) / poza1.cols;
-
-		}
-		scor = sqrt(sum);
-		printf("\nscor potrivire (caz 2) ==> img2 sub img1 = %f ", scor);
-		if (scor < bestScore)
-		{
-			bestScore = scor;
-			pozitieDePotrivire = 2;
-		}
-	}
-	sum = 0;
-
-	if (pozitie == 3)
-	{
-		for (int i = 0; i < poza1.rows; i++)
-		{
-			sum += (1.0f * (poza1(i, 0) - poza2(i, poza2.cols - 1)) * (poza1(i, 0) - poza2(i, poza2.cols - 1))) / poza1.rows;
-		}
-		scor = sqrt(sum);
-		printf("\nscor potrivire (caz 3) ==> img2 in stanga lui img1 = %f", scor);
-		if (scor < bestScore)
-		{
-			bestScore = scor;
-			pozitieDePotrivire = 3;
-		}
-
-	}
-
-	return bestScore;
+	return scor;
 }
 
 void impartireImg()
@@ -187,12 +195,11 @@ void impartireImg()
 	}
 
 	
-	Mat_ <uchar> pozaStart = miniPoze[0]; //consideram ca e piesa de inceput a puzzle-ului
 
 	int flags[4] = { 0,0,0,0 }; //vector cu flag-uri pentru pozele pe care le verificam
 
-	
 	flags[0]=1; //poza aceasta nu va fi verificata, consideram ca o alegem pe prima
+	
 	
 	float bestScore = 100000;
 	float auxScore = 0.0;
@@ -201,72 +208,73 @@ void impartireImg()
 	int indexPunctStart = 0;
 	int iminiPoza = 0, jminiPoza = 0;
 
-	
+	int directie1 = 1;
+	Mat_ <uchar> pozaCrt = miniPoze[0];
+
+	int directie2[3] = { 3, 0, 1 };
+	int index = 0;
+
 	//desenam prima poza
 	for (int i = X1[indexPunctStart]; i < X1[indexPunctStart] + latime; i++)
 	{
 		jminiPoza = 0;
-		for (int j = Y1[indexPunctStart]; j < Y1[indexPunctStart] +lungime; j++)
+		for (int j = Y1[indexPunctStart]; j < Y1[indexPunctStart] + lungime; j++)
 		{
-			dst(i, j) = pozaStart(iminiPoza, jminiPoza); //pentru ca minipoza e mai mica in dimensiune
+			dst(i, j) = pozaCrt(iminiPoza, jminiPoza); //pentru ca minipoza e mai mica in dimensiune
 			jminiPoza++;
 		}
 		iminiPoza++;
 	}
 
-	printf("Am desenat prima poza");
+	for (int i = 0; i < 3; i++) {
 
-	for (int j = 0; j < 3; j++)
-	{
-		for (int i = 0; i < miniPoze.size(); i++)
+		Mat_ <uchar> poz1 = extractMat(pozaCrt, directie1);
+
+		for (int j = 0; j < miniPoze.size(); j++)
 		{
-			if (flags[i] == 0)
+			if (flags[j] == 0)
 			{
-				//verifica ultima <-> prima coloana
-				auxScore = RMSE(pozaStart, miniPoze[i], tipPotrivire);
+				Mat_ <uchar> poz2 = extractMat(miniPoze[j], directie2[index]);
+				auxScore = RMSE(poz1, poz2);
 
-				if (auxScore < bestScore)
-				{
-					bestScore = auxScore;
-					indiceminiPoza = i;
-				}
-
+						if (auxScore < bestScore)
+						{
+							bestScore = auxScore;
+							indiceminiPoza = j;
+						}
 			}
 		}
 
-
+		directie1++;
+		index++;
 		iminiPoza = 0;
 		jminiPoza = 0;
 		indexPunctStart++;
-		pozaStart = miniPoze[indiceminiPoza];
+		pozaCrt = miniPoze[indiceminiPoza];
 
 
 		//desenam prima poza
 		for (int i = X1[indexPunctStart]; i < X1[indexPunctStart] + latime; i++)
 		{
 			jminiPoza = 0;
-			for (int j = Y1[indexPunctStart]; j < Y1[indexPunctStart] +lungime; j++)
+			for (int j = Y1[indexPunctStart]; j < Y1[indexPunctStart] + lungime; j++)
 			{
-				dst(i, j) = pozaStart(iminiPoza, jminiPoza); //pentru ca minipoza e mai mica in dimensiune
+				dst(i, j) = pozaCrt(iminiPoza, jminiPoza); //pentru ca minipoza e mai mica in dimensiune
 				jminiPoza++;
 			}
 			iminiPoza++;
 		}
 
 		flags[indiceminiPoza] = 1; //am verificat poza asta
-		tipPotrivire++;
 		bestScore = 100000;
 		auxScore = 0.0;
 
-		printf("\nPotrivire la iteratia %d", j);
-		imshow("Imagine",  miniPoze[indiceminiPoza]);
+		imshow("Imagine", miniPoze[indiceminiPoza]);
 		waitKey();
-
 	}
 
 	imshow("Result", dst);
 	waitKey();
-	
 }
 
 
