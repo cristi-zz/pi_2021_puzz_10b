@@ -82,7 +82,7 @@ Mat_ <uchar> getMiniPoza(Mat_<uchar> src, Point p, int latime, int lungime)
 		j2 = 0;
 	}
 
-	imshow("mini", dst);
+	//imshow("mini", dst);
 	//waitKey(0);
 
 	return dst;
@@ -160,7 +160,7 @@ float RMSE(Mat_<uchar> poza1, Mat_<uchar> poza2)
 	float pondere[3] = { 0.95, 0.03, 0.02 };
 
 	if (poza1.cols != poza2.cols) {
-		printf("Poza rotita gresit, L != l");
+		//printf("Poza rotita gresit, L != l");
 		return 999999;
 	}
 
@@ -190,8 +190,15 @@ void impartireImg()
 	printf("In cate imagini vreti sa impartim?\n Divizor = ");
 	scanf("%d", &divizor);
 
+
+	int rotiri = 0;
+	printf("Rotiri poze?\n rotire = ");
+	scanf("%d", &rotiri);
+
 	int latime = src.rows / divizor;
 	int lungime = src.cols / divizor;
+
+	
 
 
 	std::vector<Point> cordonate;
@@ -233,7 +240,11 @@ void impartireImg()
 	int indexPunctStart = 0;
 	int iminiPoza = 0, jminiPoza = 0;
 
-	int directie1 = 1;
+	int pozeAjutor[100] = {};//indicii pozelor de deasupra pozei cautate
+	pozeAjutor[0] = 0;
+
+
+	int directie1 = 0;
 	Mat_ <uchar> pozaCrt = miniPoze[0];
 
 	//desenam prima poza
@@ -248,12 +259,42 @@ void impartireImg()
 		iminiPoza++;
 	}
 
-	int vectorOrizontal = 0;
+	int pozaIn = 0; //index inserare pentru vectorul de poze-sus 
+	int pozaOut = 0;//index scoatere pentru vecorul de poze-sus
+
+	
 	//Pentru fiecare poza
 	for (int i = 0; i < divizor; i++) {
-		if (i % 2 == 0) directie1 = 1;
-		if (i % 2 != 0) directie1 = 3;
+		
+		if (i % 2 == 0) directie1 = 1;//pe linii pare se merge spre dreapta
+		
+		if (i % 2 != 0) directie1 = 3;//pe linii impare se merge spre stanga
+
 		for (int k = 0; k < divizor; k++) {
+
+			if (i % 2 == 0)		//calcul index de unde se scoate poza de deasupra
+			{
+				if (k < divizor - 1)
+				{		
+					pozaOut = k + 1;
+				}
+
+				else pozaOut = divizor - 1;
+
+			}
+
+			else {
+				if (k < divizor - 1)
+				{
+					pozaIn = divizor - k - 2;
+					pozaOut = divizor - k - 2;
+				}
+				else pozaOut = 0;
+
+
+			}
+			
+
 			if (k == divizor - 1) directie1 = 2;
 			if (i == divizor - 1 && k == divizor - 1) continue; // ultima imagine, nu mai potrivim pe ea
 
@@ -265,11 +306,59 @@ void impartireImg()
 				if (flags[j] == 1) continue;
 				
 				auxScore = 999999;
-				for (int direction = 0; direction < 4; direction++) {
-					Mat_ <uchar> poz2 = extractMat(miniPoze[j], direction);
+				if (rotiri == 1)//se verifica toate laturile pozei 2
+				{
+					for (int direction = 0; direction < 4; direction++) {
+						Mat_ <uchar> poz2 = extractMat(miniPoze[j], direction);
+						Mat_ <uchar> poz22 = extractMat(miniPoze[j], 0);
 
-					printf("Pentru poza %d, directia %d: ", j, direction);
+						printf("Pentru poza %d, directia %d: ", j, direction);
+						float aux = RMSE(poz1, poz2);
+
+
+						if (i > 0)//prima linie nu are poze deasupra
+						{
+							Mat_<uchar> pozaDeAjutor = extractMat(miniPoze[pozeAjutor[pozaOut]], 2);
+							//printf("ajutor de la  %d = %d\n", pozaOut, pozeAjutor[pozaOut]);
+							//imshow("Ajutor", miniPoze[pozeAjutor[pozaOut]]);
+							//waitKey(0);
+							float scorDeAjutor = RMSE(poz22, pozaDeAjutor);
+							aux += scorDeAjutor;
+						}
+
+						if (aux < auxScore) {
+							auxScore = aux;
+						}
+
+						printf("\n");
+					}
+				}
+				else //se verifica doar laturile adiacente
+				{	
+					int direction2; //din ce parte extragem culoril la poza 2
+					if (i % 2 == 0 && k < divizor - 1) direction2 = 3;
+					if (i % 2 == 0 && k == divizor - 1) direction2 = 0;
+					if (i % 2 == 1 && k < divizor - 1) direction2 = 1;
+					if (i % 2 == 1 && k == divizor - 1) direction2 = 0;
+
+
+					
+					Mat_ <uchar> poz2 = extractMat(miniPoze[j], direction2);
+					Mat_ <uchar> pozaCandidat = extractMat(miniPoze[j], 0);//poza pentru care calculam scorul
+
+					printf("Pentru poza %d, directia %d:   ", j, direction2);
 					float aux = RMSE(poz1, poz2);
+
+
+					if (i > 0) //prima linie nu are poze deasupra
+					{
+						Mat_<uchar> pozaDeAjutor = extractMat(miniPoze[pozeAjutor[pozaOut]], 2);
+						//printf("ajutor de la  %d = %d\n", pozaOut, pozeAjutor[pozaOut]);
+						//imshow("Ajutor", miniPoze[pozeAjutor[pozaOut]]);
+						//waitKey(0);
+						float scorDeAjutor = RMSE(pozaCandidat, pozaDeAjutor);
+						aux += scorDeAjutor;
+					}
 
 					if (aux < auxScore) {
 						auxScore = aux;
@@ -278,11 +367,15 @@ void impartireImg()
 					printf("\n");
 				}
 
+				
+
 				if (auxScore < bestScore)
 				{
 					bestScore = auxScore;
 					printf("Best score: %f\n", bestScore);
 					indiceminiPoza = j;
+
+					
 				}
 			}
 			printf("\n\n");
@@ -309,6 +402,45 @@ void impartireImg()
 			
 			imshow("MiniPoza adaugata", dst);
 			waitKey();
+
+			if (i % 2 == 0 )//pe randuri pare de la stanga la dreapta
+			{	
+				if (k < divizor - 1)
+				{
+					pozaIn = k + 1;
+					pozaOut = k + 1;
+				}
+
+				else pozaOut = divizor - 1;
+
+			
+			}
+
+			else { //pe randuri impare de la dreapta la stanga
+				if (k < divizor - 1)
+				{
+					pozaIn = divizor - k - 2;
+					pozaOut = divizor - k - 2;
+				}
+				else pozaOut = 0;
+			
+				
+			}
+		
+
+			pozeAjutor[pozaIn] = indiceminiPoza;
+
+
+			for (int i2 = 0; i2 < 10; i2++)
+			{
+
+
+				//printf("%d ", pozeAjutor[i2]);
+
+
+			}
+			
+			
 		}
 	}
 }
