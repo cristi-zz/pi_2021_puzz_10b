@@ -91,7 +91,7 @@ Mat_ <uchar> getMiniPoza(Mat_<uchar> src, Point p, int latime, int lungime)
 /// Directie 1 -> dreapta
 /// Directie 2 -> jos
 /// Directie 3 -> stanga
-/// Directie 4 -> sus
+/// Directie 0 -> sus
 Mat_<uchar> extractMat(Mat_<uchar> poza, int pozitie) {
 
 	Mat_<uchar> extras;
@@ -183,26 +183,19 @@ void impartireImg()
 	openFileDlg(fname);
 	Mat_<uchar> src = imread(fname, IMREAD_GRAYSCALE);
 	Mat_<uchar> dst(src.rows, src.cols);
-
 	std::vector<Mat_<uchar>> miniPoze;
-
+	
 	int divizor = 0;
 	printf("In cate imagini vreti sa impartim?\n Divizor = ");
 	scanf("%d", &divizor);
-
-
+	
 	int rotiri = 0;
 	printf("Rotiri poze?\n rotire = ");
 	scanf("%d", &rotiri);
-
 	int latime = src.rows / divizor;
 	int lungime = src.cols / divizor;
 
-	
-
-
 	std::vector<Point> cordonate;
-
 	for (int i = 0; i < divizor; i++) {
 		for (int j = 0; j < divizor; j++) {
 			cordonate.push_back(Point(i * latime, j * lungime));
@@ -239,10 +232,8 @@ void impartireImg()
 	int tipPotrivire = 1;
 	int indexPunctStart = 0;
 	int iminiPoza = 0, jminiPoza = 0;
-
 	int pozeAjutor[100] = {};//indicii pozelor de deasupra pozei cautate
 	pozeAjutor[0] = 0;
-
 
 	int directie1 = 0;
 	Mat_ <uchar> pozaCrt = miniPoze[0];
@@ -258,20 +249,14 @@ void impartireImg()
 		}
 		iminiPoza++;
 	}
-
 	int pozaIn = 0; //index inserare pentru vectorul de poze-sus 
 	int pozaOut = 0;//index scoatere pentru vecorul de poze-sus
 
-	
 	//Pentru fiecare poza
 	for (int i = 0; i < divizor; i++) {
-		
 		if (i % 2 == 0) directie1 = 1;//pe linii pare se merge spre dreapta
-		
 		if (i % 2 != 0) directie1 = 3;//pe linii impare se merge spre stanga
-
 		for (int k = 0; k < divizor; k++) {
-
 			if (i % 2 == 0)		//calcul index de unde se scoate poza de deasupra
 			{
 				if (k < divizor - 1)
@@ -281,20 +266,15 @@ void impartireImg()
 
 				else pozaOut = divizor - 1;
 
-			}
-
-			else {
+			} else {
 				if (k < divizor - 1)
 				{
 					pozaIn = divizor - k - 2;
 					pozaOut = divizor - k - 2;
 				}
 				else pozaOut = 0;
-
-
 			}
 			
-
 			if (k == divizor - 1) directie1 = 2;
 			if (i == divizor - 1 && k == divizor - 1) continue; // ultima imagine, nu mai potrivim pe ea
 
@@ -332,23 +312,18 @@ void impartireImg()
 
 						printf("\n");
 					}
-				}
-				else //se verifica doar laturile adiacente
-				{	
+				} else {//se verifica doar laturile adiacente	
 					int direction2; //din ce parte extragem culoril la poza 2
 					if (i % 2 == 0 && k < divizor - 1) direction2 = 3;
 					if (i % 2 == 0 && k == divizor - 1) direction2 = 0;
 					if (i % 2 == 1 && k < divizor - 1) direction2 = 1;
 					if (i % 2 == 1 && k == divizor - 1) direction2 = 0;
 
-
-					
 					Mat_ <uchar> poz2 = extractMat(miniPoze[j], direction2);
 					Mat_ <uchar> pozaCandidat = extractMat(miniPoze[j], 0);//poza pentru care calculam scorul
 
 					printf("Pentru poza %d, directia %d:   ", j, direction2);
 					float aux = RMSE(poz1, poz2);
-
 
 					if (i > 0) //prima linie nu are poze deasupra
 					{
@@ -363,11 +338,8 @@ void impartireImg()
 					if (aux < auxScore) {
 						auxScore = aux;
 					}
-
 					printf("\n");
 				}
-
-				
 
 				if (auxScore < bestScore)
 				{
@@ -379,12 +351,10 @@ void impartireImg()
 				}
 			}
 			printf("\n\n");
-
 			iminiPoza = 0;
 			jminiPoza = 0;
 			indexPunctStart++;
 			pozaCrt = miniPoze[indiceminiPoza];
-
 
 			//Desenam poza potrivita
 			for (int l = cordonateDesen[indexPunctStart].x; l < cordonateDesen[indexPunctStart].x + latime; l++)
@@ -409,38 +379,21 @@ void impartireImg()
 				{
 					pozaIn = k + 1;
 					pozaOut = k + 1;
-				}
-
-				else pozaOut = divizor - 1;
-
-			
-			}
-
-			else { //pe randuri impare de la dreapta la stanga
+				} else pozaOut = divizor - 1;
+			} else { //pe randuri impare de la dreapta la stanga
 				if (k < divizor - 1)
 				{
 					pozaIn = divizor - k - 2;
 					pozaOut = divizor - k - 2;
 				}
 				else pozaOut = 0;
-			
-				
 			}
-		
-
 			pozeAjutor[pozaIn] = indiceminiPoza;
-
 
 			for (int i2 = 0; i2 < 10; i2++)
 			{
-
-
 				//printf("%d ", pozeAjutor[i2]);
-
-
 			}
-			
-			
 		}
 	}
 }
